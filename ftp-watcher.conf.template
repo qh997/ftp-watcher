@@ -1,0 +1,6 @@
+ftp-work-root = /path/to/work/folder
+ftp-dl-path = downloads
+ftp-st-file = ftp-status
+ftp-tool-root = /path/toftp/tools
+ftp-tool = sftp
+time-interval = 15

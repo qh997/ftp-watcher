@@ -1,0 +1,19 @@
+#!/bin/bash
+
+work_folder=$(cd `dirname $0`; pwd)
+
+IFS=$'\n'
+while [ 1 ]; do
+	output=$(${work_folder}/ftp-status.pl)
+	count=0
+	for line in ${output}; do
+		echo $line
+		: $((count++))
+	done
+
+	sleep 1
+
+	if [ $count -gt 0 ]; then
+		echo -ne "\033[${count}A"
+	fi
+done

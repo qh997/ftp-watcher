@@ -1,0 +1,34 @@
+#!/usr/bin/expect -f
+
+set work_folder [ exec bash -c {pwd} ]
+set cfg_file [ lindex $argv 0 ]
+set tar_path [ lindex $argv 1 ]
+
+set configs [ open "${cfg_file}" "r" ]
+while { ![ eof $configs ] } {
+	set line [string trim [ gets $configs ] ]
+	if { $line == "" } continue
+	set value [ string trim [ lindex [ split $line = ] 1 ] ]
+	if { $value == "" } continue
+	switch -regexp -- $line {
+		^#.* { }
+		^sftp-host=.* { set sftp_host $value }
+		^sftp-port=.* { set sftp_port $value }
+		^sftp-user=.* { set sftp_user $value }
+		^sftp-pass=.* { set sftp_pass $value }
+	}
+}
+
+spawn sftp -P 443 $sftp_user@$sftp_host
+
+expect {
+	"*yes/no" { send "yes\r"; exp_continue }
+	"*password:" { send "$sftp_pass\r" }
+}
+
+expect "sftp>"
+send "ls -l '${tar_path}'\r"
+
+expect "sftp>"
+send "exit\r"
+interact

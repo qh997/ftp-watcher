@@ -1,0 +1,4 @@
+sftp-host=ftp.example.com
+sftp-port=443
+sftp-user=USERNAME
+sftp-pass=PASSWORD
