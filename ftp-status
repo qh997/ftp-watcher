@@ -1,6 +1,6 @@
 #!/bin/bash
 
-work_folder=$(cd `dirname $0`; pwd)
+work_folder='/usr/local/lib/ftp-watcher/'
 
 IFS=$'\n'
 while [ 1 ]; do
@@ -15,5 +15,7 @@ while [ 1 ]; do
 
 	if [ $count -gt 0 ]; then
 		echo -ne "\033[${count}A"
+	else
+		exit 0
 	fi
 done

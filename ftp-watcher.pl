@@ -14,16 +14,17 @@ my $STATUS = {
 $SIG{'INT'} = \&handler;
 $SIG{'QUIT'} = \&handler;
 
-my %conf = get_config('ftp-watcher.conf');
+my %conf = get_config('/etc/ftp-watcher/ftp-watcher.conf');
 my $work_folder = $conf{'ftp-work-root'};
 my $download_folder = $work_folder.'/'.$conf{'ftp-dl-path'};
 my $status_file = $work_folder.'/'.$conf{'ftp-st-file'};
 my $ftp_tool = $conf{'ftp-tool-root'}.'/'.$conf{'ftp-tool'};
-my @ftp_paths = get_paths('ftp-paths.conf');
+my @ftp_paths = get_paths('/etc/ftp-watcher/ftp-paths.conf');
 
 my %locked;
 lock_file($status_file);
 
+my %ftp_files;
 foreach my $ftp_path (@ftp_paths) {
 	$ftp_path =~ s/#.*//;
 	$ftp_path =~ s/^\s+//;
@@ -32,51 +33,61 @@ foreach my $ftp_path (@ftp_paths) {
 
 	next unless $ftp_path;
 
-	my %ftp_files;
 	foreach my $line (readpipe("${ftp_tool}-ls.exp ${ftp_tool}.conf '${ftp_path}'")) {
 		chomp $line;
 		$line =~ s/\r//g;
-		if ($line =~ m/^[-rwx]{10}\s+(?:\d+\s+){3}(\d+)\s+(?:[\w:]+\s+){3}(.*)$/) {
-			my $file = $2;
-			my $size = $1;
-			$ftp_files{$file} = $size;
+		if ($line =~ m/^(-|d)[-rwx]{9}\s+(?:\d+\s+){3}(\d+)\s+(?:[\w:]+\s+){3}(.*)$/) {
+			my $type = $1;
+			my $size = $2;
+			my $file = $3;
+
+			if ($type eq '-') {
+				# say $file;
+				$ftp_files{$ftp_path}->{$file} = $size;
+			}
+			elsif ($type eq 'd') {
+				# say "Folder : $file";
+			}
 		}
 	}
-
-	`touch $status_file` unless -f $status_file;
-
-	open my $fh, "< $status_file";
-	my @pre_status = <$fh>;
-	close $fh;
-
-	my @new_status;
-	foreach my $line (@pre_status) {
-		chomp $line;
-		next unless $line;
-
-		my ($local_s, $local_p, $local_f, $local_z) = split(':', $line);
-
-		if (exists $ftp_files{$local_f}) {
-			if ($local_s eq $STATUS->{w} && $ftp_files{$local_f} == $local_z) {
-				push @new_status, $STATUS->{p}.":$local_p:$local_f:$ftp_files{$local_f}";
-			}
-			else {
-				push @new_status, $line;
-			}
-
-			delete $ftp_files{$local_f};
-		}
-	}
-
-	foreach my $ftp_f (keys %ftp_files) {
-		push @new_status, $STATUS->{w}.":$ftp_path:$ftp_f:$ftp_files{$ftp_f}";
-	}
-
-	open $fh, "> $status_file";
-	print $fh join "\n", @new_status;
-	print $fh "\n";
-	close $fh;
 }
+
+`touch $status_file` unless -f $status_file;
+
+open my $fh, "< $status_file";
+my @pre_status = <$fh>;
+close $fh;
+
+my @new_status;
+foreach my $line (@pre_status) {
+	chomp $line;
+	next unless $line;
+
+	my ($local_s, $local_p, $local_f, $local_z) = split(':', $line);
+
+	if (exists $ftp_files{$local_p}->{$local_f}) {
+		my $ftp_z = $ftp_files{$local_p}->{$local_f};
+		if ($local_s eq $STATUS->{w} && $ftp_z == $local_z) {
+			push @new_status, $STATUS->{p}.":$local_p:$local_f:$ftp_z";
+		}
+		else {
+			push @new_status, $line;
+		}
+
+		delete $ftp_files{$local_p}->{$local_f};
+	}
+}
+
+foreach my $ftp_p (keys %ftp_files) {
+	foreach my $ftp_f (keys %{$ftp_files{$ftp_p}}) {
+		push @new_status, $STATUS->{w}.":$ftp_p:$ftp_f:".$ftp_files{$ftp_p}->{$ftp_f};
+	}
+}
+
+open $fh, "> $status_file";
+print $fh join "\n", @new_status;
+print $fh "\n";
+close $fh;
 
 unlock_file($status_file);
 

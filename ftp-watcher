@@ -1,0 +1,55 @@
+#!/bin/bash
+
+kill_proc() {
+	local ipid=$1
+
+	for child_pid in $(ps -ef | awk "\$3 == ${ipid}{print \$2}" | sort -r); do
+		kill_proc ${child_pid}
+	done
+
+	echo KILL[$ipid]
+	kill -9 $ipid
+}
+
+start() {
+	echo "start ftp-watcher"
+	start-stop-daemon --start --quiet -b -m --pidfile /var/run/ftp-watcher/ftp-watcher.pid \
+		--exec /usr/local/lib/ftp-watcher/ftp-watcher.sh
+
+	echo PID $(cat "/var/run/ftp-watcher/ftp-watcher.pid")
+	sleep 1
+	echo "start ftp-update"
+	start-stop-daemon --start --quiet -b -m --pidfile /var/run/ftp-watcher/ftp-update.pid \
+		--exec /usr/local/lib/ftp-watcher/ftp-update.sh
+	echo PID $(cat "/var/run/ftp-watcher/ftp-update.pid")
+	exit 0
+}
+
+stop()
+{
+	pid=`cat /var/run/ftp-watcher/ftp-watcher.pid`
+	kill_proc $pid
+	rm -rf /var/run/ftp-watcher/ftp-watcher.pid
+	echo "stop ftp-watcher"
+
+	pid=`cat /var/run/ftp-watcher/ftp-update.pid`
+	kill_proc $pid
+	rm -rf /var/run/ftp-watcher/ftp-update.pid
+	echo "stop ftp-update"
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	*)
+	echo "usage: $0 start|stop|restart"
+	exit 0
+esac

@@ -1,2 +1,36 @@
 #!/bin/bash
 
+[ -d /etc/ftp-watcher ] || mkdir /etc/ftp-watcher
+if [ ! -e "/etc/ftp-watcher/ftp-watcher.conf" ]; then
+	cp "ftp-watcher.conf.template" "/etc/ftp-watcher/ftp-watcher.conf"
+fi
+
+if [ ! -e "/etc/ftp-watcher/ftp-paths.conf" ]; then
+	touch "/etc/ftp-watcher/ftp-paths.conf"
+fi
+
+cp ftp-status /usr/local/bin/
+chmod a+x /usr/local/bin/ftp-status
+
+[ -d /usr/local/lib/ftp-watcher ] || mkdir /usr/local/lib/ftp-watcher
+
+cp ftp-status.pl /usr/local/lib/ftp-watcher/
+cp ftp-update.pl /usr/local/lib/ftp-watcher/
+cp ftp-update.sh /usr/local/lib/ftp-watcher/
+cp ftp-watcher.pl /usr/local/lib/ftp-watcher/
+cp ftp-watcher.sh /usr/local/lib/ftp-watcher/
+cp -r sftp /usr/local/lib/ftp-watcher/
+
+chmod -R a+x /usr/local/lib/ftp-watcher/
+
+cp ftp-watcher /etc/init.d/
+chmod a+x /etc/init.d/ftp-watcher
+
+[ -d /var/log/ftp-watcher ] || mkdir /var/log/ftp-watcher
+touch /var/log/ftp-watcher/ftp-update.log
+touch /var/log/ftp-watcher/ftp-watcher.log
+chmod 666 /var/log/ftp-watcher/ftp-update.log
+chmod 666 /var/log/ftp-watcher/ftp-watcher.log
+
+[ -d /var/run/ftp-watcher ] || mkdir /var/run/ftp-watcher
+chmod 767 /var/run/ftp-watcher/

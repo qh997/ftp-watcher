@@ -11,7 +11,7 @@ my $STATUS = {
 	i => 'INTERPT',
 };
 
-my %conf = get_config('ftp-watcher.conf');
+my %conf = get_config('/etc/ftp-watcher/ftp-watcher.conf');
 my $work_folder = $conf{'ftp-work-root'};
 my $status_file = $work_folder.'/'.$conf{'ftp-st-file'};
 my $download_folder = $work_folder.'/'.$conf{'ftp-dl-path'};
@@ -27,12 +27,13 @@ foreach my $line (@local_status) {
 	next unless $line;
 
 	my ($local_s, $local_p, $local_f, $local_z, $local_t) = split(':', $line);
+	my $local_path = get_local_path("$local_p/");
 
 	my $crt_size = 0;
 	my $percent = 0;
 	my $time_elapse = 0;
-	if (-e "$download_folder/$local_f") {
-		$crt_size = `wc -c "$download_folder/$local_f" | awk '{print \$1}'`;
+	if (-e "$local_path/$local_f") {
+		$crt_size = `wc -c "$local_path/$local_f" | awk '{print \$1}'`;
 		$percent = $crt_size / $local_z * 100;
 		$time_elapse = time - $local_t if $local_t;
 	}
@@ -59,7 +60,7 @@ foreach my $line (@local_status) {
 	}
 	elsif ($local_s eq $STATUS->{f}) {
 		printf " %5.1f%% %-16s - %s\n",
-			0,
+			$percent,
 			"Finished",
 			$local_f;
 	}
@@ -91,4 +92,13 @@ sub get_config {
 	}
 
 	return %configs;
+}
+
+sub get_local_path {
+	my $ftp_path = shift;
+
+	my $local_path = "$download_folder/$ftp_path";
+	$local_path =~ s/\/+[^\/]*^//;
+
+	return $local_path;
 }

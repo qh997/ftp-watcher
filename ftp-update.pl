@@ -15,7 +15,7 @@ my $STATUS = {
 $SIG{'INT'} = \&handler;
 $SIG{'QUIT'} = \&handler;
 
-my %conf = get_config('ftp-watcher.conf');
+my %conf = get_config('/etc/ftp-watcher/ftp-watcher.conf');
 my $work_folder = $conf{'ftp-work-root'};
 my $status_file = $work_folder.'/'.$conf{'ftp-st-file'};
 my $download_folder = $work_folder.'/'.$conf{'ftp-dl-path'};
@@ -67,6 +67,7 @@ if (@targets) {
 		}
 		elsif (defined $pid && $pid == 0) {
 			say $path;
+
 			download($path);
 
 			exit 0;
@@ -104,11 +105,14 @@ sub get_config {
 }
 
 sub download {
-	my $path = shift;
+	my $file_path = shift;
+	my $local_path = get_local_path($file_path);
 
-	system("${ftp_tool}-get.exp ${ftp_tool}.conf '$path' '$download_folder'");
+	`mkdir -p "$local_path"`;
 
-	my $local_f = $path;
+	system("${ftp_tool}-get.exp ${ftp_tool}.conf '$file_path' '$local_path'");
+
+	my $local_f = $file_path;
 	$local_f =~ s/.*\///;
 	change_status($local_f, $STATUS->{d}, $STATUS->{f});
 }
@@ -143,7 +147,7 @@ sub change_status {
 	close $fh;
 
 	foreach (@local_status) {
-		s/^${old_status}/${status}/;
+		s/^${old_status}/${status}/ if m/^${old_status}:.*:$local_f:/;
 	}
 
 	open $fh, "> $status_file";
@@ -163,4 +167,13 @@ sub handler {
 
 	unlock_file($status_file);
 	exit;
+}
+
+sub get_local_path {
+	my $ftp_path = shift;
+
+	my $local_path = "$download_folder/$ftp_path";
+	$local_path =~ s/(.*)\/.*/$1/;
+
+	return $local_path;
 }
