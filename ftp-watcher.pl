@@ -11,8 +11,6 @@ my $STATUS = {
 	f => 'FINISHD',
 };
 
-my %locked;
-
 $SIG{'INT'} = \&handler;
 $SIG{'QUIT'} = \&handler;
 
@@ -23,6 +21,7 @@ my $status_file = $work_folder.'/'.$conf{'ftp-st-file'};
 my $ftp_tool = $conf{'ftp-tool-root'}.'/'.$conf{'ftp-tool'};
 my @ftp_paths = get_paths('ftp-paths.conf');
 
+my %locked;
 lock_file($status_file);
 
 foreach my $ftp_path (@ftp_paths) {

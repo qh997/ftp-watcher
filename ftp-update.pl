@@ -15,8 +15,6 @@ my $STATUS = {
 $SIG{'INT'} = \&handler;
 $SIG{'QUIT'} = \&handler;
 
-my %locked;
-
 my %conf = get_config('ftp-watcher.conf');
 my $work_folder = $conf{'ftp-work-root'};
 my $status_file = $work_folder.'/'.$conf{'ftp-st-file'};
@@ -25,6 +23,8 @@ my $ftp_tool = $conf{'ftp-tool-root'}.'/'.$conf{'ftp-tool'};
 my $time_interval = $conf{'time-interval'};
 
 exit unless -f $status_file;
+
+my %locked;
 lock_file($status_file);
 
 open my $fh, "< $status_file";
@@ -50,30 +50,35 @@ foreach my $line (@local_status) {
 	}
 }
 
-open $fh, "> $status_file";
-print $fh join "\n", @new_status;
-print $fh "\n";
-close $fh;
+if (@targets) {
+	open $fh, "> $status_file";
+	print $fh join "\n", @new_status;
+	print $fh "\n";
+	close $fh;
 
-unlock_file($status_file);
+	unlock_file($status_file);
 
-my @work_pids;
-foreach my $path (@targets) {
-	my $pid = fork();
-	if ($pid) {
-		push @work_pids, $pid;
-		sleep $time_interval;
+	my @work_pids;
+	foreach my $path (@targets) {
+		my $pid = fork();
+		if ($pid) {
+			push @work_pids, $pid;
+			sleep $time_interval;
+		}
+		elsif (defined $pid && $pid == 0) {
+			say $path;
+			download($path);
+
+			exit 0;
+		}
 	}
-	elsif (defined $pid && $pid == 0) {
-		say $path;
-		download($path);
 
-		exit 0;
+	foreach my $child (@work_pids) {
+	    waitpid($child, 0);
 	}
 }
-
-foreach my $child (@work_pids) {
-    waitpid($child, 0);
+else {
+	unlock_file($status_file);
 }
 
 sub get_config {
@@ -141,7 +146,7 @@ sub change_status {
 		s/^${old_status}/${status}/;
 	}
 
-	open my $fh, "> $status_file";
+	open $fh, "> $status_file";
 	print $fh join '', @local_status;
 	close $fh;
 
