@@ -3,6 +3,7 @@
 workfolder=$(cd `dirname $0`; pwd)
 
 while [ 1 ]; do
+	date
 	${workfolder}/ftp-watcher.pl
-	sleep 20
+	sleep 60
 done

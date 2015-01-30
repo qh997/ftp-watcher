@@ -15,13 +15,15 @@ start() {
 	echo "start ftp-watcher"
 	start-stop-daemon --start --quiet -b -m --pidfile /var/run/ftp-watcher/ftp-watcher.pid \
 		--exec /usr/local/lib/ftp-watcher/ftp-watcher.sh
-
 	echo PID $(cat "/var/run/ftp-watcher/ftp-watcher.pid")
+
 	sleep 1
+
 	echo "start ftp-update"
 	start-stop-daemon --start --quiet -b -m --pidfile /var/run/ftp-watcher/ftp-update.pid \
 		--exec /usr/local/lib/ftp-watcher/ftp-update.sh
 	echo PID $(cat "/var/run/ftp-watcher/ftp-update.pid")
+
 	exit 0
 }
 

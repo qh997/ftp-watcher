@@ -68,6 +68,7 @@ foreach my $line (@pre_status) {
 	if (exists $ftp_files{$local_p}->{$local_f}) {
 		my $ftp_z = $ftp_files{$local_p}->{$local_f};
 		if ($local_s eq $STATUS->{w} && $ftp_z == $local_z) {
+			print "$local_p:$local_f - $STATUS->{w} -> $STATUS->{p}\n";
 			push @new_status, $STATUS->{p}.":$local_p:$local_f:$ftp_z";
 		}
 		else {
@@ -80,6 +81,7 @@ foreach my $line (@pre_status) {
 
 foreach my $ftp_p (keys %ftp_files) {
 	foreach my $ftp_f (keys %{$ftp_files{$ftp_p}}) {
+		print "$ftp_p:$ftp_f - $STATUS->{w}\n";
 		push @new_status, $STATUS->{w}.":$ftp_p:$ftp_f:".$ftp_files{$ftp_p}->{$ftp_f};
 	}
 }
