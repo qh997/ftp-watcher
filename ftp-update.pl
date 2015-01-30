@@ -110,7 +110,7 @@ sub download {
 
 	`mkdir -p "$local_path"`;
 
-	system("${ftp_tool}-get.exp ${ftp_tool}.conf '$file_path' '$local_path'");
+	system("${ftp_tool}-get ${ftp_tool}.conf '$file_path' '$local_path'");
 
 	my $local_f = $file_path;
 	$local_f =~ s/.*\///;

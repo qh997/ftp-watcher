@@ -33,7 +33,7 @@ foreach my $ftp_path (@ftp_paths) {
 
 	next unless $ftp_path;
 
-	foreach my $line (readpipe("${ftp_tool}-ls.exp ${ftp_tool}.conf '${ftp_path}'")) {
+	foreach my $line (readpipe("${ftp_tool}-ls ${ftp_tool}.conf '${ftp_path}'")) {
 		chomp $line;
 		$line =~ s/\r//g;
 		if ($line =~ m/^(-|d)[-rwx]{9}\s+(?:\d+\s+){3}(\d+)\s+(?:[\w:]+\s+){3}(.*)$/) {
@@ -86,10 +86,12 @@ foreach my $ftp_p (keys %ftp_files) {
 	}
 }
 
-open $fh, "> $status_file";
-print $fh join "\n", @new_status;
-print $fh "\n";
-close $fh;
+if (@new_status) {
+	open $fh, "> $status_file";
+	print $fh join "\n", @new_status;
+	print $fh "\n";
+	close $fh;
+}
 
 unlock_file($status_file);
 
