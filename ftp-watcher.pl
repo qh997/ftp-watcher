@@ -71,6 +71,9 @@ foreach my $line (@pre_status) {
 			print "$local_p:$local_f - $STATUS->{w} -> $STATUS->{p}\n";
 			push @new_status, $STATUS->{p}.":$local_p:$local_f:$ftp_z";
 		}
+		elsif ($local_s eq $STATUS->{w}) {
+			push @new_status, $STATUS->{w}.":$local_p:$local_f:$ftp_z";
+		}
 		else {
 			push @new_status, $line;
 		}
